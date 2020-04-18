@@ -198,6 +198,8 @@ modules.xml
 # Sonarlint plugin
 .idea/sonarlint
 
+.env
+
 ### Python ###
 # Byte-compiled / optimized / DLL files
 
