@@ -1,17 +1,16 @@
 import os
 from itertools import chain
 
-# import firebase_admin
-# from firebase_admin import firestore, messaging
+import firebase_admin
+from firebase_admin import firestore, messaging
 from flask import Flask, jsonify, request
 
 from app.ext import count
 from app.model import User, Command, collection_to_dict, user_to_dict
 
 app = Flask(__name__)
-# firebase_admin = firebase_admin.initialize_app()
-# db = firestore.client()
-db = None
+firebase_admin = firebase_admin.initialize_app()
+db = firestore.client()
 
 
 @app.route('/user/<user_id>/commands')
@@ -95,14 +94,8 @@ def register_client(user_id):
     return jsonify(1)
 
 
-@app.route('/debug')
-def debug():
-    # users = collection_to_dict(db.collection(User.C), user_to_dict)
-    # commands = collection_to_dict(db.collection(Command.C))
-    # return jsonify({
-    #     'users':  users,
-    #     'commands': commands
-    # })
+@app.route('/debug_cred')
+def debug_cred():
     path = "keys/terminal-watcher-firebase-adminsdk-303ol-36674b1a6e.json"
     cred = os.getenv('GOOGLE_APPLICATION_CREDENTIALS', None)
     cred = ('exists' if os.path.isfile(cred) else 'NOT') if cred else 'NO ENV'
@@ -117,6 +110,17 @@ def debug():
         'ls .': os.listdir('.'),
         'ls wd': os.listdir(os.getcwd()),
     })
+
+
+@app.route('/debug')
+def debug():
+    # users = collection_to_dict(db.collection(User.C), user_to_dict)
+    # commands = collection_to_dict(db.collection(Command.C))
+    # return jsonify({
+    #     'users':  users,
+    #     'commands': commands
+    # })
+    pass
 
 
 @app.route('/reset', methods=['POST'])
