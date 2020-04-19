@@ -49,9 +49,9 @@ def open_command(user_id, command_id):
 
 def push_message(clients):
     tokens = [c.get('token') for c in clients]
-    # message = messaging.MulticastMessage(data={'action': 'update'}, tokens=tokens)
-    # response = messaging.send_multicast(message)
-    # print('{} messages were sent successfully'.format(response.success_count))
+    message = messaging.MulticastMessage(data={'action': 'update'}, tokens=tokens)
+    response = messaging.send_multicast(message)
+    print('{} messages were sent successfully'.format(response.success_count))
 
 
 @app.route('/user/<user_id>/command/<command_id>/close', methods=['POST'])
@@ -114,13 +114,12 @@ def debug_cred():
 
 @app.route('/debug')
 def debug():
-    # users = collection_to_dict(db.collection(User.C), user_to_dict)
-    # commands = collection_to_dict(db.collection(Command.C))
-    # return jsonify({
-    #     'users':  users,
-    #     'commands': commands
-    # })
-    pass
+    users = collection_to_dict(db.collection(User.C), user_to_dict)
+    commands = collection_to_dict(db.collection(Command.C))
+    return jsonify({
+        'users':  users,
+        'commands': commands
+    })
 
 
 @app.route('/reset', methods=['POST'])
@@ -131,4 +130,3 @@ def reset():
     for document in chain(clients, users.stream(), commands):
         document.reference.delete()
     return jsonify(1)
-
