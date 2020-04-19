@@ -1,15 +1,17 @@
+import os
 from itertools import chain
 
-import firebase_admin
-from firebase_admin import firestore, messaging
+# import firebase_admin
+# from firebase_admin import firestore, messaging
 from flask import Flask, jsonify, request
 
 from app.ext import count
 from app.model import User, Command, collection_to_dict, user_to_dict
 
 app = Flask(__name__)
-firebase_admin = firebase_admin.initialize_app()
-db = firestore.client()
+# firebase_admin = firebase_admin.initialize_app()
+# db = firestore.client()
+db = None
 
 
 @app.route('/user/<user_id>/commands')
@@ -48,7 +50,7 @@ def open_command(user_id, command_id):
 
 def push_message(clients):
     tokens = [c.get('token') for c in clients]
-    message = messaging.MulticastMessage(data={'action': 'update'}, tokens=tokens)
+    # message = messaging.MulticastMessage(data={'action': 'update'}, tokens=tokens)
     # response = messaging.send_multicast(message)
     # print('{} messages were sent successfully'.format(response.success_count))
 
@@ -95,11 +97,25 @@ def register_client(user_id):
 
 @app.route('/debug')
 def debug():
-    users = collection_to_dict(db.collection(User.C), user_to_dict)
-    commands = collection_to_dict(db.collection(Command.C))
+    # users = collection_to_dict(db.collection(User.C), user_to_dict)
+    # commands = collection_to_dict(db.collection(Command.C))
+    # return jsonify({
+    #     'users':  users,
+    #     'commands': commands
+    # })
+    path = "keys/terminal-watcher-firebase-adminsdk-303ol-36674b1a6e.json"
+    cred = os.getenv('GOOGLE_APPLICATION_CREDENTIALS', None)
+    cred = ('exists' if os.path.isfile(cred) else 'NOT') if cred else 'NO ENV'
+    same_dir = 'exists' if os.path.isfile(path) else 'NOT'
+    parent_dir = 'exists' if os.path.isfile('../' + path) else 'NOT'
     return jsonify({
-        'users':  users,
-        'commands': commands
+        'GOOGLE_APPLICATION_CREDENTIALS': os.getenv('GOOGLE_APPLICATION_CREDENTIALS', None),
+        'wd': os.getcwd(),
+        path: same_dir,
+        '../{}'.format(path): parent_dir,
+        'GOOGLE_APPLICATION_CREDENTIALS file': cred,
+        'ls .': os.listdir('.'),
+        'ls wd': os.listdir(os.getcwd()),
     })
 
 

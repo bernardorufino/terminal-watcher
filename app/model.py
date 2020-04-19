@@ -1,6 +1,6 @@
 from pprint import pprint
 
-from google.cloud.firestore_v1 import DocumentSnapshot
+# from google.cloud.firestore_v1 import DocumentSnapshot
 
 
 class User:
@@ -33,7 +33,8 @@ def user_to_dict(user):
     return {'clients': clients, **user.to_dict()}
 
 
-def collection_to_dict(collection, func=DocumentSnapshot.to_dict):
+# def collection_to_dict(collection, func=DocumentSnapshot.to_dict):
+def collection_to_dict(collection, func=None):
     documents = collection.stream()
     return {d.id: func(d) for d in documents}
 
