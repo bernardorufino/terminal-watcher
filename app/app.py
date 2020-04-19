@@ -91,7 +91,7 @@ def register_client(user_id):
     }
     clients.document(token).set(client_data)
 
-    return jsonify(1)
+    return jsonify(token)
 
 
 @app.route('/debug_cred')
