@@ -147,3 +147,9 @@ def local_reset():
 @app.route('/local/debug')
 def local_debug():
     return jsonify(db)
+
+
+@app.route('/local/debug/force')
+def local_debug_force():
+    db = manager.load()
+    return jsonify(db)
