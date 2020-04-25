@@ -2,15 +2,16 @@ import os
 from itertools import chain
 
 import firebase_admin
-from firebase_admin import firestore, messaging
+from firebase_admin import messaging
 from flask import Flask, jsonify, request
 
 from app.ext import count
-from app.model import User, Command, collection_to_dict, user_to_dict
+from app.model import User, Command, collection_to_dict, user_to_dict, DataManager, Database
 
 app = Flask(__name__)
 firebase_admin = firebase_admin.initialize_app()
-db = firestore.client()
+manager = DataManager('database.db')
+db = manager.load()
 
 
 @app.route('/user/<user_id>/commands')
@@ -44,7 +45,8 @@ def open_command(user_id, command_id):
     }
     command_ref.set(command_data)
 
-    return jsonify(1)
+    manager.save(db)
+    return jsonify(True)
 
 
 def push_message(clients):
@@ -71,7 +73,8 @@ def close_command(user_id, command_id):
     clients = user.collection(User.Client.C).stream()
     push_message(clients)
 
-    return jsonify(1)
+    manager.save(db)
+    return jsonify(True)
 
 
 @app.route('/user/<user_id>/register', methods=['POST'])
@@ -91,10 +94,11 @@ def register_client(user_id):
     }
     clients.document(token).set(client_data)
 
+    manager.save(db)
     return jsonify(token)
 
 
-@app.route('/debug_cred')
+@app.route('/debug/cred')
 def debug_cred():
     path = "keys/terminal-watcher-firebase-adminsdk-303ol-36674b1a6e.json"
     cred = os.getenv('GOOGLE_APPLICATION_CREDENTIALS', None)
@@ -129,4 +133,17 @@ def reset():
     commands = db.collection(Command.C).stream()
     for document in chain(clients, users.stream(), commands):
         document.reference.delete()
-    return jsonify(1)
+    return jsonify(True)
+
+
+@app.route('/local/reset', methods=['POST'])
+def local_reset():
+    global db
+    db = Database.root()
+    manager.save(db)
+    return jsonify(True)
+
+
+@app.route('/local/debug')
+def local_debug():
+    return jsonify(db)
