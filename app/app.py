@@ -11,11 +11,11 @@ from app.model import User, Command, collection_to_dict, user_to_dict, DataManag
 app = Flask(__name__)
 firebase_admin = firebase_admin.initialize_app()
 manager = DataManager('database.db')
-db = manager.load()
 
 
 @app.route('/user/<user_id>/commands')
 def get_commands(user_id):
+    db = manager.load()
     token = request.args['token']
 
     clients = db.collection(User.C).document(user_id).collection(User.Client.C)
@@ -30,6 +30,7 @@ def get_commands(user_id):
 
 @app.route('/user/<user_id>/command/<command_id>/open', methods=['POST'])
 def open_command(user_id, command_id):
+    db = manager.load()
     data = request.json
 
     command_id = 'u{}{}'.format(user_id, command_id)
@@ -58,6 +59,7 @@ def push_message(clients):
 
 @app.route('/user/<user_id>/command/<command_id>/close', methods=['POST'])
 def close_command(user_id, command_id):
+    db = manager.load()
     data = request.json
 
     command_id = 'u{}{}'.format(user_id, command_id)
@@ -79,6 +81,7 @@ def close_command(user_id, command_id):
 
 @app.route('/user/<user_id>/register', methods=['POST'])
 def register_client(user_id):
+    db = manager.load()
     data = request.json
 
     user_ref = db.collection(User.C).document(user_id)
@@ -118,6 +121,7 @@ def debug_cred():
 
 @app.route('/debug')
 def debug():
+    db = manager.load()
     users = collection_to_dict(db.collection(User.C), user_to_dict)
     commands = collection_to_dict(db.collection(Command.C))
     return jsonify({
@@ -128,6 +132,7 @@ def debug():
 
 @app.route('/reset', methods=['POST'])
 def reset():
+    db = manager.load()
     users = db.collection(User.C)
     clients = [c for u in users.stream() for c in u.reference.collection(User.Client.C).stream()]
     commands = db.collection(Command.C).stream()
@@ -138,7 +143,6 @@ def reset():
 
 @app.route('/local/reset', methods=['POST'])
 def local_reset():
-    global db
     db = Database.root()
     manager.save(db)
     return jsonify(True)
@@ -146,10 +150,5 @@ def local_reset():
 
 @app.route('/local/debug')
 def local_debug():
-    return jsonify(db)
-
-
-@app.route('/local/debug/force')
-def local_debug_force():
     db = manager.load()
     return jsonify(db)
