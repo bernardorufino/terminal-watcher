@@ -1,5 +1,6 @@
 import os
 from itertools import chain
+from pprint import pprint
 
 import firebase_admin
 from firebase_admin import messaging
@@ -45,16 +46,10 @@ def open_command(user_id, command_id):
         Command.SESSION_PID: data['session_pid'],
     }
     command_ref.set(command_data)
+    push_update_clients(db, user_id)
 
     manager.save(db)
     return jsonify(True)
-
-
-def push_message(clients):
-    tokens = [c.get('token') for c in clients]
-    message = messaging.MulticastMessage(data={'action': 'update'}, tokens=tokens)
-    response = messaging.send_multicast(message)
-    print('{} messages were sent successfully'.format(response.success_count))
 
 
 @app.route('/user/<user_id>/command/<command_id>/close', methods=['POST'])
@@ -70,13 +65,24 @@ def close_command(user_id, command_id):
         Command.STATUS_CODE: data['status_code'],
     }
     command_ref.set(command_data)
-
-    user = db.collection(User.C).document(user_id)
-    clients = user.collection(User.Client.C).stream()
-    push_message(clients)
+    push_update_clients(db, user_id)
 
     manager.save(db)
     return jsonify(True)
+
+
+def push_update_clients(db, user_id):
+    user = db.collection(User.C).document(user_id)
+    clients = user.collection(User.Client.C).stream()
+    tokens = [c.get('token_fcm') for c in clients]
+
+    print('{} tokens to send'.format(len(tokens)))
+    pprint(tokens)
+
+    message = messaging.MulticastMessage(data={'action': 'update'}, tokens=tokens)
+    response = messaging.send_multicast(message)
+
+    print('{} messages were sent successfully'.format(response.success_count))
 
 
 @app.route('/user/<user_id>/register', methods=['POST'])
@@ -90,7 +96,7 @@ def register_client(user_id):
     user_ref.set(user_data)
 
     clients = user_ref.collection(User.Client.C)
-    token = str(count(clients.stream()))
+    token = data['old_token'] if 'old_token' in data else str(count(clients.stream()))
     client_data = {
         User.Client.TOKEN: token,
         User.Client.TOKEN_FCM: data['token_fcm'],
@@ -119,6 +125,7 @@ def debug_cred():
     })
 
 
+@app.route('/')
 @app.route('/debug')
 def debug():
     db = manager.load()
@@ -130,17 +137,18 @@ def debug():
     })
 
 
+# @app.route('/reset', methods=['POST'])
+# def reset():
+#     db = manager.load()
+#     users = db.collection(User.C)
+#     clients = [c for u in users.stream() for c in u.reference.collection(User.Client.C).stream()]
+#     commands = db.collection(Command.C).stream()
+#     for document in chain(clients, users.stream(), commands):
+#         document.reference.delete()
+#     return jsonify(True)
+
+
 @app.route('/reset', methods=['POST'])
-def reset():
-    db = manager.load()
-    users = db.collection(User.C)
-    clients = [c for u in users.stream() for c in u.reference.collection(User.Client.C).stream()]
-    commands = db.collection(Command.C).stream()
-    for document in chain(clients, users.stream(), commands):
-        document.reference.delete()
-    return jsonify(True)
-
-
 @app.route('/local/reset', methods=['POST'])
 def local_reset():
     db = Database.root()
