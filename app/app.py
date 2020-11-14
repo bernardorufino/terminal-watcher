@@ -21,7 +21,7 @@ def get_commands(user_id):
 
     clients = db.collection(User.C).document(user_id).collection(User.Client.C)
     client = clients.document(token).get()
-    if not client.exists:
+    if not client.exists():
         return jsonify({'error': 'Not authorized'}), 401
 
     commands = db.collection(Command.C).where(Command.USER_ID, '==', user_id)
