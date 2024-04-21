@@ -1,3 +1,7 @@
+# Terminal Watcher
+
+Monitor the commands you've typed on your terminal on your phone.
+
 #  Terminal Watcher server
 To use heroku:
 1. Install [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli#download-and-install).
